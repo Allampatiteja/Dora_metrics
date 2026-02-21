@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.npm/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+server/dora.db
+
+# Build outputs
+client/dist/
+.temp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
