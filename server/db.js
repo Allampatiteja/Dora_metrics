@@ -42,6 +42,7 @@ db.serialize(() => {
       db.run("INSERT INTO projects (name, data_source) VALUES ('E-commerce Frontend', 'MOCK')"); // ID 1
       db.run("INSERT INTO projects (name, data_source) VALUES ('CRM Module', 'MOCK')");        // ID 2
       db.run("INSERT INTO projects (name, data_source, repo_owner, repo_name) VALUES ('Smart IoT Core', 'REAL', 'Allampatiteja', 'smartiot')"); // ID 3
+      db.run("INSERT INTO projects (name, data_source, repo_owner, repo_name) VALUES ('EventHub', 'REAL', 'Allampatiteja', 'eventhub')"); // ID 4
 
       // Admin
       db.run("INSERT INTO users (username, password, role, full_name, leader_name, project_id) VALUES ('admin', 'admin123', 'admin', 'Alex Johnson', NULL, NULL)");
@@ -54,6 +55,9 @@ db.serialize(() => {
       // Developers for Project 2 (CRM)
       db.run("INSERT INTO users (username, password, role, full_name, leader_name, project_id) VALUES ('dev4', 'dev123', 'developer', 'David Kim', 'Dwight Schrute', 2)");
       db.run("INSERT INTO users (username, password, role, full_name, leader_name, project_id) VALUES ('dev5', 'dev123', 'developer', 'Maya Patel', 'Dwight Schrute', 2)");
+
+      // Developer for Project 4 (EventHub)
+      db.run("INSERT INTO users (username, password, role, full_name, leader_name, project_id) VALUES ('dev6', 'dev123', 'developer', 'Ravi Teja', 'Alex Johnson', 4)");
 
       const now = new Date();
 

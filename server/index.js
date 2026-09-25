@@ -52,12 +52,40 @@ app.get('/api/projects', (req, res) => {
 
 const { getGitHubMetrics } = require('./githubService');
 
+const calculateMetrics = (rows) => {
+    const totalDeployments = rows.length;
+    const failures = rows.filter(d => d.status === 'failure').length;
+    const changeFailureRate = totalDeployments > 0 ? (failures / totalDeployments) * 100 : 0;
+    const totalLeadTime = rows.reduce((acc, d) => acc + (d.lead_time_minutes || 0), 0);
+    const meanLeadTime = totalDeployments > 0 ? totalLeadTime / totalDeployments : 0;
+    const recoveryTimes = rows.filter(d => d.recovery_time_minutes !== null).map(d => d.recovery_time_minutes);
+    const meanTimeToRecovery = recoveryTimes.length > 0
+        ? recoveryTimes.reduce((acc, time) => acc + time, 0) / recoveryTimes.length
+        : 0;
+
+    return {
+        deploymentFrequency: (totalDeployments / 30).toFixed(2),
+        leadTimeChange: meanLeadTime.toFixed(0),
+        changeFailureRate: changeFailureRate.toFixed(1),
+        meanTimeToRecovery: meanTimeToRecovery.toFixed(0),
+        rawData: rows,
+        isRealTime: false
+    };
+};
+
 // Metrics routes
 app.get('/api/metrics', async (req, res) => {
     const { project_id, role } = req.query;
 
     if (!project_id) {
-        return res.status(400).json({ error: "project_id is required" });
+        if (role !== 'admin') {
+            return res.status(400).json({ error: "project_id is required" });
+        }
+
+        return db.all("SELECT * FROM deployments ORDER BY deployed_at ASC", [], (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            return res.json(calculateMetrics(rows));
+        });
     }
 
     // First, check the project source
@@ -85,24 +113,7 @@ app.get('/api/metrics', async (req, res) => {
         db.all(query, params, (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
 
-            // Calculate DORA Metrics
-            const totalDeployments = rows.length;
-            const failures = rows.filter(d => d.status === 'failure').length;
-            const changeFailureRate = totalDeployments > 0 ? (failures / totalDeployments) * 100 : 0;
-            const totalLeadTime = rows.reduce((acc, d) => acc + (d.lead_time_minutes || 0), 0);
-            const meanLeadTime = totalDeployments > 0 ? totalLeadTime / totalDeployments : 0;
-            const recoveryTimes = rows.filter(d => d.recovery_time_minutes !== null).map(d => d.recovery_time_minutes);
-            const meanTimeToRecovery = recoveryTimes.length > 0 ? recoveryTimes.reduce((acc, t) => acc + t, 0) / recoveryTimes.length : 0;
-            const deploymentFrequency = totalDeployments / 30;
-
-            res.json({
-                deploymentFrequency: deploymentFrequency.toFixed(2),
-                leadTimeChange: meanLeadTime.toFixed(0),
-                changeFailureRate: changeFailureRate.toFixed(1),
-                meanTimeToRecovery: meanTimeToRecovery.toFixed(0),
-                rawData: rows,
-                isRealTime: false
-            });
+            res.json(calculateMetrics(rows));
         });
     });
 });
